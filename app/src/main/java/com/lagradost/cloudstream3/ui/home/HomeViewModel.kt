@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lagradost.cloudstream3.APIHolder.apis
 import com.lagradost.cloudstream3.APIHolder.getApiFromNameNull
-import com.lagradost.cloudstream3.APIHolder.withLock
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.context
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
@@ -134,7 +133,7 @@ class HomeViewModel : ViewModel() {
     private var currentShuffledList: List<SearchResponse> = listOf()
 
     private fun autoloadRepo(): APIRepository {
-        return APIRepository(apis.withLock { apis.first { it.hasMainPage } })
+        return APIRepository(apis.first { it.hasMainPage })
     }
 
     private val _availableWatchStatusTypes =
@@ -348,20 +347,20 @@ class HomeViewModel : ViewModel() {
             // Create repos for all valid APIs
             val allRepos = validAPIs.map { APIRepository(it) }
 
-            // Load from ALL providers concurrently, each prefixed with provider name
+            // Load from ALL providers concurrently, tracking which repo each result came from
             val allResults = allRepos.amap { apiRepo ->
                 try {
-                    apiRepo.getMainPage(1, null)
+                    apiRepo to apiRepo.getMainPage(1, null)
                 } catch (e: Exception) {
                     logError(e)
-                    Resource.Failure(false, e.message ?: "Failed to load")
+                    apiRepo to Resource.Failure(false, e.message ?: "Failed to load")
                 }
             }
 
             var anySuccess = false
             val allItems = mutableListOf<HomePageList>()
 
-            allResults.forEach { result ->
+            allResults.forEach { (apiRepo, result) ->
                 if (result is Resource.Success) {
                     anySuccess = true
                     result.value.forEach { home ->
