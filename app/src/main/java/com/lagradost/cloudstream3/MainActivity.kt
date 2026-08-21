@@ -1383,6 +1383,11 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                     }
                 }
 
+                // Request storage permission before loading plugins
+                if (!checkWrite()) {
+                    requestRW()
+                }
+
                 ioSafe {
                     PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_loadBundledPlugins(
                         this@MainActivity
