@@ -1,4 +1,4 @@
-name: Build AiTV
+name: Build AiTV+
 
 on:
   push:
@@ -25,22 +25,21 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install SDK platform 37
+        run: sdkmanager "platforms;android-37"
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APK
-        run: ./gradlew assembleDebug assembleRelease
+      - name: Build debug APK
+        run: ./gradlew assembleStableDebug
 
-      - name: Find APK files
+      - name: Find APK file
         id: find_apk
         run: |
-          find app/build/outputs -name "*.apk" -type f
-          DEBUG_APK=$(find app/build/outputs -name "*debug*.apk" -type f | head -1)
-          RELEASE_APK=$(find app/build/outputs -name "*release*.apk" -type f | head -1)
-          echo "debug_apk=$DEBUG_APK" >> $GITHUB_OUTPUT
-          echo "release_apk=$RELEASE_APK" >> $GITHUB_OUTPUT
-          echo "Found debug: $DEBUG_APK"
-          echo "Found release: $RELEASE_APK"
+          APK_PATH=$(find app/build/outputs -name "*.apk" -type f | head -1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_PATH"
 
       - name: Generate version tag
         id: version
@@ -52,13 +51,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: "AiTV ${{ steps.version.outputs.tag }}"
+          name: "AiTV+ ${{ steps.version.outputs.tag }}"
           body: |
-            App AiTV - Streaming com extensoes CloudStream3.
+            App AiTV+ - Streaming com extensoes CloudStream3.
             Baseado no CloudStream3 com 10 extensoes brasileiras pre-instaladas.
-          files: |
-            ${{ steps.find_apk.outputs.debug_apk }}
-            ${{ steps.find_apk.outputs.release_apk }}
+          files: ${{ steps.find_apk.outputs.apk_path }}
           generate_release_notes: true
           make_latest: true
         env:

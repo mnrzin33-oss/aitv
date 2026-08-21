@@ -1384,6 +1384,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                 }
 
                 ioSafe {
+                    PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_loadBundledPlugins(
+                        this@MainActivity
+                    )
                     PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_loadAllLocalPlugins(
                         this@MainActivity,
                         false

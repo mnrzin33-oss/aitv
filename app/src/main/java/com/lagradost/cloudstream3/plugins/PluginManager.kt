@@ -567,6 +567,75 @@ object PluginManager {
         afterPluginsLoadedEvent.invoke(forceReload)
     }
 
+    /**
+     * Copies bundled .cs3 extension files from the APK's assets/extensions directory
+     * into the local plugins directory, but only once (controlled by a SharedPreferences flag).
+     *
+     * DO NOT USE THIS IN A PLUGIN! It may case an infinite recursive loop lagging or crashing everyone's devices.
+     * If you use it from a plugin, do not expect a stable jvmName, SO DO NOT USE IT!
+     */
+    @Suppress("FunctionName")
+    @InternalAPI
+    suspend fun ___DO_NOT_CALL_FROM_A_PLUGIN_loadBundledPlugins(context: Context) {
+        val prefs = context.getSharedPreferences("bundled_plugins_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("bundled_plugins_loaded_v1", false)) {
+            Log.d(TAG, "Bundled plugins already loaded, skipping")
+            return
+        }
+
+        Log.d(TAG, "Loading bundled plugins from assets/extensions")
+
+        val assetFiles = try {
+            context.assets.list("extensions") ?: emptyArray()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to list bundled plugin assets", e)
+            logError(e)
+            return
+        }
+
+        val cs3Files = assetFiles.filter { it.endsWith(".cs3", ignoreCase = true) }
+
+        if (cs3Files.isEmpty()) {
+            Log.d(TAG, "No bundled .cs3 files found in assets/extensions")
+            prefs.edit().putBoolean("bundled_plugins_loaded_v1", true).apply()
+            return
+        }
+
+        Log.d(TAG, "Found ${cs3Files.size} bundled .cs3 file(s) in assets/extensions")
+
+        val pluginsDir = File(LOCAL_PLUGINS_PATH)
+        if (!pluginsDir.exists()) {
+            val created = pluginsDir.mkdirs()
+            if (!created) {
+                Log.e(TAG, "Failed to create local plugins directory at $LOCAL_PLUGINS_PATH")
+                return
+            }
+        }
+
+        cs3Files.forEach { fileName ->
+            try {
+                val destinationFile = File(pluginsDir, fileName)
+                if (destinationFile.exists()) {
+                    Log.d(TAG, "Bundled plugin '$fileName' already exists locally, skipping copy")
+                    return@forEach
+                }
+
+                Log.d(TAG, "Copying bundled plugin '$fileName' from assets to $LOCAL_PLUGINS_PATH")
+                context.assets.open("extensions/$fileName").use { inputStream ->
+                    destinationFile.outputStream().use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to copy bundled plugin '$fileName'", e)
+                logError(e)
+            }
+        }
+
+        prefs.edit().putBoolean("bundled_plugins_loaded_v1", true).apply()
+        Log.d(TAG, "Finished loading bundled plugins")
+    }
+
     /** @return true if safe mode is enabled in any possible way. */
     fun isSafeMode(): Boolean {
         return checkSafeModeFile() || lastError != null
