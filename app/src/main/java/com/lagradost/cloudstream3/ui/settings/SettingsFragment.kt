@@ -240,6 +240,7 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
 
             AlertDialog.Builder(requireContext())
                 .setTitle("Acesso Restrito")
+                .setMessage("Somente o desenvolvedor Matheus tem acesso administrativo do app.")
                 .setView(dialogView)
                 .setPositiveButton("Entrar") { _, _ ->
                     val id = idInput.text.toString().trim()
