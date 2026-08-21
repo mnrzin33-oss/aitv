@@ -480,7 +480,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
                                 if (it.supportedTypes.all { type -> type == TvType.NSFW }) return@filter false
                             }
 
-                            it.hasMainPage && (isPinned || it.supportedTypes.any(
+                            it.hasMainPage && (isPinned || preSelectedTypes.isEmpty() || it.supportedTypes.any(
                                 preSelectedTypes::contains
                             ))
                         }

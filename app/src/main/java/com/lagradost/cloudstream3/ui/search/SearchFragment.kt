@@ -334,9 +334,13 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                         DataStoreHelper.searchPreferenceTags = types
 
                         arrayAdapter.clear()
-                        currentValidApis = validAPIs.filter { api ->
-                            api.supportedTypes.any {
-                                types.contains(it)
+                        currentValidApis = if (types.isEmpty()) {
+                            validAPIs
+                        } else {
+                            validAPIs.filter { api ->
+                                api.supportedTypes.any {
+                                    types.contains(it)
+                                }
                             }
                         }.sortedBy { it.name.lowercase() }
 

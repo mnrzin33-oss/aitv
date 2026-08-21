@@ -2203,7 +2203,7 @@ class ResultViewModel2 : ViewModel() {
                                 buildResultEpisode(
                                     loadResponse.name,
                                     filterName(i.name),
-                                    i.posterUrl,
+                                    i.posterUrl ?: loadResponse.posterUrl,
                                     episode,
                                     i.season,
                                     if (seasonData != null) seasonData.displaySeason else i.season,
@@ -2260,7 +2260,7 @@ class ResultViewModel2 : ViewModel() {
                             buildResultEpisode(
                                 loadResponse.name,
                                 filterName(episode.name),
-                                episode.posterUrl,
+                                episode.posterUrl ?: loadResponse.posterUrl,
                                 episodeIndex,
                                 episode.season,
                                 if (seasonData != null) seasonData.displaySeason else episode.season,

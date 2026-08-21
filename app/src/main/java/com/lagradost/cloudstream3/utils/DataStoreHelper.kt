@@ -119,7 +119,7 @@ object DataStoreHelper {
 
     private var searchPreferenceTagsStrings: List<String> by UserPreferenceDelegate(
         "search_pref_tags",
-        listOf(TvType.Movie, TvType.TvSeries).map { it.name })
+        emptyList())
 
     var searchPreferenceTags: List<TvType>
         get() = deserializeTv(searchPreferenceTagsStrings)
@@ -129,7 +129,7 @@ object DataStoreHelper {
 
     private var homePreferenceStrings: List<String> by UserPreferenceDelegate(
         "home_pref_homepage",
-        listOf(TvType.Movie, TvType.TvSeries).map { it.name })
+        emptyList())
 
     var homePreference: List<TvType>
         get() = deserializeTv(homePreferenceStrings)
