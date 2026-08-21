@@ -26,9 +26,8 @@ import kotlinx.coroutines.withTimeout
 
 class APIRepository(val api: MainAPI) {
     companion object {
-        // 2 minute timeout to prevent bad extensions/extractors from hogging the resources
-        // No real provider should take longer, so we hard kill them.
-        private const val DEFAULT_TIMEOUT = 120_000L
+        // 60 second timeout per provider
+        private const val DEFAULT_TIMEOUT = 60_000L
         private const val MAX_TIMEOUT = 4 * DEFAULT_TIMEOUT
         private const val MIN_TIMEOUT = 5_000L
 

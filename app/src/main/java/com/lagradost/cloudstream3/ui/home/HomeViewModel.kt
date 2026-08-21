@@ -42,6 +42,11 @@ import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.DOWNLOAD_HEADER_CACHE
 import com.lagradost.cloudstream3.utils.DOWNLOAD_HEADER_CACHE_BACKUP
 import com.lagradost.cloudstream3.utils.DataStoreHelper
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.io.File
 import com.lagradost.cloudstream3.utils.DataStoreHelper.deleteAllResumeStateIds
 import com.lagradost.cloudstream3.utils.DataStoreHelper.getAllResumeStateIds
 import com.lagradost.cloudstream3.utils.DataStoreHelper.getAllWatchStateIds
@@ -59,6 +64,59 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class HomeViewModel : ViewModel() {
     companion object {
+        // Home page cache for instant display
+        private const val HOME_CACHE_FILE = "home_cache.json"
+        private const val HOME_CACHE_MAX_AGE_MS = 30 * 60 * 1000L // 30 minutes
+
+        private fun getCacheFile(): File? {
+            return context?.filesDir?.resolve(HOME_CACHE_FILE)
+        }
+
+        fun saveHomeCache(expandable: Map<String, ExpandableHomepageList>) {
+            try {
+                val file = getCacheFile() ?: return
+                val data = expandable.map { (name, item) ->
+                    name to CachedHomePage(
+                        list = item.list,
+                        currentPage = item.currentPage,
+                        hasNext = item.hasNext,
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+                file.writeText(Gson().toJson(data))
+            } catch (_: Exception) {}
+        }
+
+        fun loadHomeCache(): Map<String, ExpandableHomepageList>? {
+            try {
+                val file = getCacheFile() ?: return null
+                if (!file.exists()) return null
+                val json = file.readText()
+                if (json.isBlank()) return null
+                val type = object : TypeToken<List<Pair<String, CachedHomePage>>>() {}.type
+                val data: List<Pair<String, CachedHomePage>> = Gson().fromJson(json, type)
+                // Check if cache is stale
+                val oldest = data.minOfOrNull { it.second.timestamp } ?: 0L
+                if (System.currentTimeMillis() - oldest > HOME_CACHE_MAX_AGE_MS) return null
+                return data.associate { (name, cached) ->
+                    name to ExpandableHomepageList(
+                        list = cached.list,
+                        currentPage = cached.currentPage,
+                        hasNext = cached.hasNext
+                    )
+                }
+            } catch (_: Exception) {
+                return null
+            }
+        }
+
+        data class CachedHomePage(
+            val list: HomePageList,
+            val currentPage: Int,
+            val hasNext: Boolean,
+            val timestamp: Long
+        )
+
         suspend fun getResumeWatching(): List<DataStoreHelper.ResumeWatchingResult>? {
             val resumeWatching = withContext(Dispatchers.IO) {
                 getAllResumeStateIds()?.mapNotNull { id ->
@@ -326,7 +384,6 @@ class HomeViewModel : ViewModel() {
         _apiName.postValue(api.name)
         _randomItems.postValue(listOf())
 
-        _page.postValue(Resource.Loading())
         _preview.postValue(Resource.Loading())
         // cancel the current preview expand as that is no longer relevant
         addJob?.cancel()
@@ -344,58 +401,72 @@ class HomeViewModel : ViewModel() {
                 return@ioSafe
             }
 
+            // Show cached data instantly while network loads
+            val cachedData = loadHomeCache()
+            if (cachedData != null && cachedData.isNotEmpty()) {
+                expandable.putAll(cachedData)
+                _page.postValue(Resource.Success(expandable.toMap()))
+            } else {
+                _page.postValue(Resource.Loading())
+            }
+
             // Create repos for all valid APIs
             val allRepos = validAPIs.map { APIRepository(it) }
 
-            // Load from ALL providers concurrently, tracking which repo each result came from
-            val allResults = allRepos.amap { apiRepo ->
-                try {
-                    apiRepo to apiRepo.getMainPage(1, null)
-                } catch (e: Exception) {
-                    logError(e)
-                    apiRepo to Resource.Failure(false, e.message ?: "Failed to load")
-                }
-            }
+            // Set repo to the first valid API for backward compatibility
+            repo = allRepos.firstOrNull()
 
-            var anySuccess = false
+            // Load from providers PROGRESSIVELY - show each as it responds
             val allItems = mutableListOf<HomePageList>()
+            var anySuccess = false
 
-            allResults.forEach { (apiRepo, result) ->
-                if (result is Resource.Success) {
-                    anySuccess = true
-                    result.value.forEach { home ->
-                        home?.items?.forEach { list ->
-                            val filteredList =
-                                context?.filterHomePageListByFilmQuality(list) ?: list
-
-                            // If category already exists, merge items; otherwise create new
-                            val existing = expandable[list.name]
-                            if (existing != null) {
-                                // Merge: add new items, dedup by URL
-                                val mergedList = (existing.list.list + filteredList.list).distinctBy { it.url }
-                                existing.list = existing.list.copy(list = mergedList)
-                                existing.hasNext = existing.hasNext || home.hasNext
-                            } else {
-                                expandable[list.name] =
-                                    ExpandableHomepageList(
-                                        filteredList.copy(
-                                            list = CopyOnWriteArrayList(
-                                                filteredList.list
-                                            )
-                                        ), 1, home.hasNext
-                                    )
-                                // Track which API this category came from for expansion
-                                categoryToApi[list.name] = apiRepo
-                            }
-
-                            allItems.add(filteredList)
+            coroutineScope {
+                val jobs = allRepos.map { apiRepo ->
+                    async {
+                        try {
+                            apiRepo to apiRepo.getMainPage(1, null)
+                        } catch (e: Exception) {
+                            logError(e)
+                            apiRepo to Resource.Failure(false, e.message ?: "Failed to load")
                         }
                     }
                 }
-            }
 
-            // Set repo to the first valid API for backward compatibility
-            repo = allRepos.firstOrNull()
+                // Process each result as it completes
+                for (job in jobs) {
+                    val (apiRepo, result) = try { job.await() } catch (_: Exception) {
+                        continue
+                    }
+
+                    if (result is Resource.Success) {
+                        anySuccess = true
+                        result.value.forEach { home ->
+                            home?.items?.forEach { list ->
+                                val filteredList =
+                                    context?.filterHomePageListByFilmQuality(list) ?: list
+
+                                val existing = expandable[list.name]
+                                if (existing != null) {
+                                    val mergedList = (existing.list.list + filteredList.list).distinctBy { it.url }
+                                    existing.list = existing.list.copy(list = mergedList)
+                                    existing.hasNext = existing.hasNext || home.hasNext
+                                } else {
+                                    expandable[list.name] =
+                                        ExpandableHomepageList(
+                                            filteredList.copy(
+                                                list = CopyOnWriteArrayList(filteredList.list)
+                                            ), 1, home.hasNext
+                                        )
+                                    categoryToApi[list.name] = apiRepo
+                                }
+                                allItems.add(filteredList)
+                            }
+                        }
+                        // Post update immediately as each provider responds
+                        _page.postValue(Resource.Success(expandable.toMap()))
+                    }
+                }
+            }
 
             previewResponses.clear()
             previewResponsesAdded.clear()
@@ -432,7 +503,11 @@ class HomeViewModel : ViewModel() {
             } else {
                 _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
             }
-            _page.postValue(Resource.Success(expandable))
+
+            // Save to cache for next launch
+            if (expandable.isNotEmpty()) {
+                saveHomeCache(expandable)
+            }
         } catch (e: Exception) {
             _randomItems.postValue(emptyList())
             logError(e)
