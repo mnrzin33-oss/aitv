@@ -461,13 +461,7 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun afterPluginsLoaded(forceReload: Boolean) {
-        // If no homepage is selected and plugins are loaded, pick the first available provider
-        if (DataStoreHelper.currentHomePage == null && PluginManager.loadedOnlinePlugins) {
-            val validAPIs = context?.filterProviderByPreferredMedia()
-            if (!validAPIs.isNullOrEmpty()) {
-                DataStoreHelper.currentHomePage = validAPIs.first().name
-            }
-        }
+        // Default to showing all providers - no single provider auto-selected
         loadAndCancel(DataStoreHelper.currentHomePage, forceReload)
     }
 
@@ -545,6 +539,34 @@ class HomeViewModel : ViewModel() {
             // if we don't need to reload and we have a valid homepage or currently loading the same thing then return
             val currentLoading = isCurrentlyLoadingName
             if (!forceReload && (currentPage is Resource.Success && currentPage.value.isNotEmpty() || (currentLoading != null && currentLoading == preferredApiName))) {
+                return@ioSafe
+            }
+
+            // Handle null/empty = show all providers
+            if (preferredApiName == null) {
+                val validAPIs = context?.filterProviderByPreferredMedia()
+                if (!validAPIs.isNullOrEmpty()) {
+                    _apiName.postValue(context?.getString(com.lagradost.cloudstream3.R.string.all_providers) ?: "All")
+                    loadAndCancel(validAPIs.first())
+                } else {
+                    loadAndCancel(noneApi)
+                }
+                reloadAccount()
+                return@ioSafe
+            }
+
+            // Handle "All" providers selection
+            val allProvidersName = context?.getString(com.lagradost.cloudstream3.R.string.all_providers) ?: "All"
+            if (preferredApiName == allProvidersName) {
+                if (fromUI) DataStoreHelper.currentHomePage = null
+                val validAPIs = context?.filterProviderByPreferredMedia()
+                if (!validAPIs.isNullOrEmpty()) {
+                    _apiName.postValue(allProvidersName)
+                    loadAndCancel(validAPIs.first())
+                } else {
+                    loadAndCancel(noneApi)
+                }
+                reloadAccount()
                 return@ioSafe
             }
 

@@ -372,8 +372,16 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
         fun Context.selectHomepage(selectedApiName: String?, callback: (String) -> Unit) {
             val validAPIs = filterProviderByPreferredMedia().toMutableList()
 
+            // Create "all" pseudo-api
+            val allApi = object : MainAPI() {
+                override var name = getString(R.string.all_providers)
+                override val supportedTypes = emptySet<TvType>()
+                override var lang = ""
+            }
+
             validAPIs.add(0, randomApi)
             validAPIs.add(0, noneApi)
+            validAPIs.add(0, allApi)
             //val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             //builder.setView(R.layout.home_select_mainpage)
             val builder =
@@ -790,9 +798,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
 
         observe(homeViewModel.apiName) { apiName ->
             currentApiName = apiName
+            val displayName = apiName ?: getString(R.string.all_providers)
             binding.apply {
-                homeApiFab.text = apiName
-                homeChangeApi.text = apiName
+                homeApiFab.text = displayName
+                homeChangeApi.text = displayName
                 homePreviewReloadProvider.isGone = (apiName == noneApi.name)
                 homePreviewSearchButton.isGone = (apiName == noneApi.name)
             }
