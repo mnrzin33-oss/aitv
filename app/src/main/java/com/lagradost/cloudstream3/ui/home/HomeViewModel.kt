@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lagradost.cloudstream3.APIHolder.apis
 import com.lagradost.cloudstream3.APIHolder.getApiFromNameNull
+import com.lagradost.cloudstream3.APIHolder.withLock
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.context
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
@@ -231,11 +232,17 @@ class HomeViewModel : ViewModel() {
 
     val lock: MutableSet<String> = mutableSetOf()
 
+    // Maps to track which API each category belongs to, for multi-provider loading
+    private val categoryToApi: MutableMap<String, APIRepository> = mutableMapOf()
+
     suspend fun expandAndReturn(name: String): ExpandableHomepageList? {
         if (lock.contains(name)) return null
         lock += name
 
-        repo?.apply {
+        // Use the per-category API repo if available, otherwise fall back to single repo
+        val targetRepo = categoryToApi[name] ?: repo
+
+        targetRepo?.apply {
             waitForHomeDelay()
 
             expandable[name]?.let { current ->
@@ -317,100 +324,119 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun load(api: MainAPI): Job = ioSafe {
-        repo = //if (api != null) {
-            APIRepository(api)
-        //} else {
-        //    autoloadRepo()
-        //}
-
-        _apiName.postValue(repo?.name)
+        _apiName.postValue(api.name)
         _randomItems.postValue(listOf())
-
-        if (repo?.hasMainPage != true) {
-            _page.postValue(Resource.Success(emptyMap()))
-            _preview.postValue(Resource.Failure(false, "No homepage"))
-            return@ioSafe
-        }
-
 
         _page.postValue(Resource.Loading())
         _preview.postValue(Resource.Loading())
         // cancel the current preview expand as that is no longer relevant
         addJob?.cancel()
 
-        when (val data = repo?.getMainPage(1, null)) {
-            is Resource.Success -> {
+        try {
+            expandable.clear()
+            categoryToApi.clear()
+
+            // Get ALL valid APIs that have main pages
+            val validAPIs = context?.filterProviderByPreferredMedia()
+            if (validAPIs.isNullOrEmpty()) {
+                _page.postValue(Resource.Success(emptyMap()))
+                _preview.postValue(Resource.Failure(false, "No providers available"))
+                isCurrentlyLoadingName = null
+                return@ioSafe
+            }
+
+            // Create repos for all valid APIs
+            val allRepos = validAPIs.map { APIRepository(it) }
+
+            // Load from ALL providers concurrently, each prefixed with provider name
+            val allResults = allRepos.amap { apiRepo ->
                 try {
-                    expandable.clear()
-                    data.value.forEach { home ->
-                        home?.items?.forEach { list ->
-                            val filteredList =
-                                context?.filterHomePageListByFilmQuality(list) ?: list
-                            expandable[list.name] =
-                                ExpandableHomepageList(
-                                    filteredList.copy(
-                                        list = CopyOnWriteArrayList(
-                                            filteredList.list
-                                        )
-                                    ), 1, home.hasNext
-                                )
-                        }
-                    }
-
-                    val items = data.value.mapNotNull { it?.items }.flatten()
-
-
-                    previewResponses.clear()
-                    previewResponsesAdded.clear()
-
-                    //val home = data.value
-                    if (items.isNotEmpty()) {
-                        val currentList =
-                            items.shuffled().filter { it.list.isNotEmpty() }
-                                .flatMap { it.list }
-                                .distinctBy { it.url }.toList()
-
-                        if (currentList.isNotEmpty()) {
-                            val randomItems =
-                                context?.filterSearchResultByFilmQuality(currentList.shuffled())
-                                    ?: currentList.shuffled()
-
-                            updatePreviewResponses(
-                                previewResponses,
-                                previewResponsesAdded,
-                                randomItems,
-                                3
-                            )
-
-                            _randomItems.postValue(randomItems)
-                            currentShuffledList = randomItems
-                        }
-                    }
-                    if (previewResponses.isEmpty()) {
-                        _preview.postValue(
-                            Resource.Failure(
-                                false,
-                                "No homepage responses"
-                            )
-                        )
-                    } else {
-                        _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
-                    }
-                    _page.postValue(Resource.Success(expandable))
+                    apiRepo.getMainPage(1, null)
                 } catch (e: Exception) {
-                    _randomItems.postValue(emptyList())
                     logError(e)
+                    Resource.Failure(false, e.message ?: "Failed to load")
                 }
             }
 
-            is Resource.Failure -> {
-                @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-                _page.postValue(data!!)
-                @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-                _preview.postValue(data!!)
+            var anySuccess = false
+            val allItems = mutableListOf<HomePageList>()
+
+            allResults.forEach { result ->
+                if (result is Resource.Success) {
+                    anySuccess = true
+                    result.value.forEach { home ->
+                        home?.items?.forEach { list ->
+                            val filteredList =
+                                context?.filterHomePageListByFilmQuality(list) ?: list
+
+                            // If category already exists, merge items; otherwise create new
+                            val existing = expandable[list.name]
+                            if (existing != null) {
+                                // Merge: add new items, dedup by URL
+                                val mergedList = (existing.list.list + filteredList.list).distinctBy { it.url }
+                                existing.list = existing.list.copy(list = mergedList)
+                                existing.hasNext = existing.hasNext || home.hasNext
+                            } else {
+                                expandable[list.name] =
+                                    ExpandableHomepageList(
+                                        filteredList.copy(
+                                            list = CopyOnWriteArrayList(
+                                                filteredList.list
+                                            )
+                                        ), 1, home.hasNext
+                                    )
+                                // Track which API this category came from for expansion
+                                categoryToApi[list.name] = apiRepo
+                            }
+
+                            allItems.add(filteredList)
+                        }
+                    }
+                }
             }
 
-            else -> Unit
+            // Set repo to the first valid API for backward compatibility
+            repo = allRepos.firstOrNull()
+
+            previewResponses.clear()
+            previewResponsesAdded.clear()
+
+            if (allItems.isNotEmpty()) {
+                val currentList =
+                    allItems.shuffled().filter { it.list.isNotEmpty() }
+                        .flatMap { it.list }
+                        .distinctBy { it.url }.toList()
+
+                if (currentList.isNotEmpty()) {
+                    val randomItems =
+                        context?.filterSearchResultByFilmQuality(currentList.shuffled())
+                            ?: currentList.shuffled()
+
+                    updatePreviewResponses(
+                        previewResponses,
+                        previewResponsesAdded,
+                        randomItems,
+                        3
+                    )
+
+                    _randomItems.postValue(randomItems)
+                    currentShuffledList = randomItems
+                }
+            }
+            if (previewResponses.isEmpty()) {
+                _preview.postValue(
+                    Resource.Failure(
+                        false,
+                        "No homepage responses"
+                    )
+                )
+            } else {
+                _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
+            }
+            _page.postValue(Resource.Success(expandable))
+        } catch (e: Exception) {
+            _randomItems.postValue(emptyList())
+            logError(e)
         }
         isCurrentlyLoadingName = null
     }
