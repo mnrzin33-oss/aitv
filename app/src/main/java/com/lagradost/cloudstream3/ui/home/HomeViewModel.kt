@@ -647,9 +647,17 @@ class HomeViewModel : ViewModel() {
 
             val api = getApiFromNameNull(preferredApiName)
             if (preferredApiName == noneApi.name) {
-                // just set to random
+                // "None" = show all providers (default behavior)
                 if (fromUI) DataStoreHelper.currentHomePage = noneApi.name
-                loadAndCancel(noneApi)
+                val validAPIs = context?.filterProviderByPreferredMedia()
+                if (!validAPIs.isNullOrEmpty()) {
+                    _apiName.postValue(context?.getString(com.lagradost.cloudstream3.R.string.all_providers) ?: "All")
+                    loadAndCancel(validAPIs.first())
+                } else {
+                    loadAndCancel(noneApi)
+                }
+                reloadAccount()
+                return@ioSafe
             } else if (preferredApiName == randomApi.name) {
                 // randomize the api, if none exist like if not loaded or not installed
                 // then use nothing
