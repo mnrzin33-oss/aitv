@@ -161,15 +161,22 @@
             android:supportsPictureInPicture="true" />
 
         <activity
-            android:name=".ui.account.AccountSelectActivity"
+            android:name=".ui.splash.SplashActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden"
-            android:exported="true">
-            <intent-filter android:exported="true">
+            android:exported="true"
+            android:theme="@style/AppTheme">
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.account.AccountSelectActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

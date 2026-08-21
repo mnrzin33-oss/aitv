@@ -1388,18 +1388,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                     requestRW()
                 }
 
-                ioSafe {
-                    PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_loadBundledPlugins(
-                        this@MainActivity
-                    )
-                    PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_installTlnPluginsOnFirstBoot(
-                        this@MainActivity
-                    )
-                    PluginManager.___DO_NOT_CALL_FROM_A_PLUGIN_loadAllLocalPlugins(
-                        this@MainActivity,
-                        false
-                    )
-                }
+                // Plugin loading moved to SplashActivity
 
 // Add your channel creation here
 
