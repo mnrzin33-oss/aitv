@@ -509,56 +509,54 @@ object PluginManager {
         val dir = File(LOCAL_PLUGINS_PATH)
 
         if (!dir.exists()) {
-            val res = dir.mkdirs()
-            if (!res) {
-                Log.w(TAG, "Failed to create local directories")
-                // We have tried to load local plugins, but exit early.
-                // This needs to be true to prevent the downloader waiting for plugins.
-                loadedLocalPlugins = true
-                return
-            }
+            dir.mkdirs()
         }
 
-        val sortedPlugins = dir.listFiles()
-        // Always sort plugins alphabetically for reproducible results
+        val sortedPlugins = dir.listFiles() ?: emptyArray()
 
-        Log.d(TAG, "Files in '${LOCAL_PLUGINS_PATH}' folder: ${sortedPlugins?.size}")
+        Log.d(TAG, "Files in '${LOCAL_PLUGINS_PATH}' folder: ${sortedPlugins.size}")
 
         // Use app-specific external files directory and copy the file there.
         // We have to do this because on Android 14+, it otherwise gives SecurityException
         // due to dex files and setReadOnly seems to have no effect unless it it here.
         val pluginDirectory = File(context.getExternalFilesDir(null), "plugins")
         if (!pluginDirectory.exists()) {
-            pluginDirectory.mkdirs() // Ensure the plugins directory exists
+            pluginDirectory.mkdirs()
         }
 
         // Make sure all local plugins are fully refreshed.
         removeKey(PLUGINS_KEY_LOCAL)
 
-        sortedPlugins?.sortedBy { it.name }?.amap { file ->
+        // First, load plugins already in the app-specific directory (e.g. from loadBundledPlugins)
+        val appPlugins = pluginDirectory.listFiles() ?: emptyArray()
+        Log.d(TAG, "Files in app plugins directory: ${appPlugins.size}")
+
+        // Copy from LOCAL_PLUGINS_PATH to app-specific directory
+        sortedPlugins.sortedBy { it.name }.amap { file ->
             try {
                 val destinationFile = File(pluginDirectory, file.name)
-
-                // Only copy the file if the destination file doesn't exist or if it
-                // has been modified (check file length and modification time).
                 if (!destinationFile.exists() ||
                     destinationFile.length() != file.length() ||
                     destinationFile.lastModified() != file.lastModified()
                 ) {
-
-                    // Copy the file to the app-specific plugin directory
                     file.copyTo(destinationFile, overwrite = true)
-
-                    // After copying, set the destination file's modification time
-                    // to match the source file. We do this for performance so that we
-                    // can check the modification time and not make redundant writes.
                     destinationFile.setLastModified(file.lastModified())
                 }
-
-                // Load the plugin after it has been copied
-                maybeLoadPlugin(context, destinationFile)
             } catch (t: Throwable) {
-                Log.e(TAG, "Failed to copy the file")
+                Log.e(TAG, "Failed to copy file ${file.name}")
+                logError(t)
+            }
+        }
+
+        // Now load all plugins from the app-specific directory
+        val allPlugins = pluginDirectory.listFiles()?.sortedBy { it.name } ?: emptyList()
+        Log.d(TAG, "Total plugins to load from app directory: ${allPlugins.size}")
+
+        allPlugins.amap { file ->
+            try {
+                maybeLoadPlugin(context, file)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to load plugin ${file.name}")
                 logError(t)
             }
         }
@@ -603,27 +601,43 @@ object PluginManager {
 
         Log.d(TAG, "Found ${cs3Files.size} bundled .cs3 file(s) in assets/extensions")
 
-        val pluginsDir = File(LOCAL_PLUGINS_PATH)
-        if (!pluginsDir.exists()) {
-            val created = pluginsDir.mkdirs()
+        // Copy to app-specific external directory (no MANAGE_EXTERNAL_STORAGE needed)
+        val appPluginsDir = File(context.getExternalFilesDir(null), "plugins")
+        if (!appPluginsDir.exists()) {
+            val created = appPluginsDir.mkdirs()
             if (!created) {
-                Log.e(TAG, "Failed to create local plugins directory at $LOCAL_PLUGINS_PATH")
+                Log.e(TAG, "Failed to create app plugins directory at ${appPluginsDir.absolutePath}")
                 return
             }
         }
 
+        // Also copy to LOCAL_PLUGINS_PATH so loadAllLocalPlugins can pick them up
+        val localPluginsDir = File(LOCAL_PLUGINS_PATH)
+        if (!localPluginsDir.exists()) {
+            localPluginsDir.mkdirs()
+        }
+
         cs3Files.forEach { fileName ->
             try {
-                val destinationFile = File(pluginsDir, fileName)
-                if (destinationFile.exists()) {
-                    Log.d(TAG, "Bundled plugin '$fileName' already exists locally, skipping copy")
-                    return@forEach
+                // Copy to app-specific directory (primary location for loading)
+                val appDestFile = File(appPluginsDir, fileName)
+                if (!appDestFile.exists()) {
+                    Log.d(TAG, "Copying bundled plugin '$fileName' to app plugins dir")
+                    context.assets.open("extensions/$fileName").use { inputStream ->
+                        appDestFile.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
                 }
 
-                Log.d(TAG, "Copying bundled plugin '$fileName' from assets to $LOCAL_PLUGINS_PATH")
-                context.assets.open("extensions/$fileName").use { inputStream ->
-                    destinationFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
+                // Also copy to LOCAL_PLUGINS_PATH for compatibility
+                val localDestFile = File(localPluginsDir, fileName)
+                if (!localDestFile.exists()) {
+                    Log.d(TAG, "Copying bundled plugin '$fileName' to local plugins dir")
+                    context.assets.open("extensions/$fileName").use { inputStream ->
+                        localDestFile.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
                     }
                 }
             } catch (e: Exception) {
