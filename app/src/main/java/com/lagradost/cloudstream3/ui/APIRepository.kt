@@ -26,8 +26,8 @@ import kotlinx.coroutines.withTimeout
 
 class APIRepository(val api: MainAPI) {
     companion object {
-        // 60 second timeout per provider
-        private const val DEFAULT_TIMEOUT = 60_000L
+        // 90 second timeout per provider
+        private const val DEFAULT_TIMEOUT = 90_000L
         private const val MAX_TIMEOUT = 4 * DEFAULT_TIMEOUT
         private const val MIN_TIMEOUT = 5_000L
 

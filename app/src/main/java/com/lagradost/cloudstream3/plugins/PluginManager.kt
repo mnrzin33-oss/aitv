@@ -696,6 +696,12 @@ object PluginManager {
 
             if (sitePlugin.url.isBlank()) return@amap
 
+            // Skip AnimeOnlineNet - admin installs manually per user
+            if (sitePlugin.name.contains("AnimeOnlineNet", ignoreCase = true)) {
+                Log.i(TAG, "Skipping AnimeOnlineNet - admin installs manually")
+                return@amap
+            }
+
             // Skip if already installed
             if (getPluginPath(activity, sitePlugin.internalName, tlnRepo.url).exists()) {
                 Log.i(TAG, "TLN+ plugin already installed: ${sitePlugin.internalName}")

@@ -3,7 +3,9 @@ package com.lagradost.cloudstream3.ui.settings
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.annotation.StringRes
 import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
@@ -35,6 +37,7 @@ import com.lagradost.cloudstream3.utils.UIHelper.navigate
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
 import com.lagradost.cloudstream3.utils.getImageFromDrawable
 import com.lagradost.cloudstream3.utils.txt
+import android.app.AlertDialog
 import java.io.File
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -220,6 +223,41 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
             binding.settingsProfileText.text = currentAccount?.name
         }
 
+        fun showPasswordDialog(navigationId: Int) {
+            val dialogView = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(60, 40, 60, 0)
+            }
+            val idInput = EditText(requireContext()).apply {
+                hint = "ID"
+            }
+            val passInput = EditText(requireContext()).apply {
+                hint = "Senha"
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+            dialogView.addView(idInput)
+            dialogView.addView(passInput)
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Acesso Restrito")
+                .setView(dialogView)
+                .setPositiveButton("Entrar") { _, _ ->
+                    val id = idInput.text.toString().trim()
+                    val pass = passInput.text.toString().trim()
+                    if (id == "admin" && pass == "admin") {
+                        navigate(navigationId)
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
+        val passwordProtected = setOf(
+            R.id.action_navigation_global_to_navigation_settings_providers,
+            R.id.action_navigation_global_to_navigation_settings_updates,
+            R.id.action_navigation_global_to_navigation_settings_extensions,
+        )
+
         binding.apply {
             listOf(
                 settingsGeneral to R.id.action_navigation_global_to_navigation_settings_general,
@@ -232,7 +270,11 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
             ).forEach { (view, navigationId) ->
                 view.apply {
                     setOnClickListener {
-                        navigate(navigationId)
+                        if (navigationId in passwordProtected) {
+                            showPasswordDialog(navigationId)
+                        } else {
+                            navigate(navigationId)
+                        }
                     }
                     if (isLayout(TV)) {
                         isFocusable = true
