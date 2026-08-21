@@ -29,7 +29,18 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug assembleRelease
+
+      - name: Find APK files
+        id: find_apk
+        run: |
+          find app/build/outputs -name "*.apk" -type f
+          DEBUG_APK=$(find app/build/outputs -name "*debug*.apk" -type f | head -1)
+          RELEASE_APK=$(find app/build/outputs -name "*release*.apk" -type f | head -1)
+          echo "debug_apk=$DEBUG_APK" >> $GITHUB_OUTPUT
+          echo "release_apk=$RELEASE_APK" >> $GITHUB_OUTPUT
+          echo "Found debug: $DEBUG_APK"
+          echo "Found release: $RELEASE_APK"
 
       - name: Generate version tag
         id: version
@@ -45,7 +56,9 @@ jobs:
           body: |
             App AiTV - Streaming com extensoes CloudStream3.
             Baseado no CloudStream3 com 10 extensoes brasileiras pre-instaladas.
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            ${{ steps.find_apk.outputs.debug_apk }}
+            ${{ steps.find_apk.outputs.release_apk }}
           generate_release_notes: true
           make_latest: true
         env:
