@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.cloudstream3.mvvm.safe
 import com.lagradost.nicehttp.Requests
 import com.lagradost.nicehttp.ignoreAllSSLErrors
+import com.lagradost.cloudstream3.utils.AdBlocker
 import okhttp3.Cache
 import okhttp3.Headers
 import okhttp3.Headers.Companion.toHeaders
@@ -41,6 +42,7 @@ fun buildDefaultClient(context: Context, ignoreSSL: Boolean = false): OkHttpClie
     val baseClient = OkHttpClient.Builder()
         .followRedirects(true)
         .followSslRedirects(true)
+        .addInterceptor(AdBlocker.createInterceptor())
         .apply {
             if (ignoreSSL) {
                 ignoreAllSSLErrors()
