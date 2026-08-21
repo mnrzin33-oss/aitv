@@ -1,7 +1,10 @@
 package com.lagradost.cloudstream3.utils
 
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.Protocol
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Ad blocker interceptor that blocks common ad domains.
@@ -156,7 +159,7 @@ object AdBlocker {
                 // Return empty response for blocked requests
                 return@Interceptor Response.Builder()
                     .request(request)
-                    .protocol(okhttp3.Protocol.HTTP_1_1)
+                    .protocol(Protocol.HTTP_1_1)
                     .code(200)
                     .message("Blocked")
                     .body("".toResponseBody(null))
