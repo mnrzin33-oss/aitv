@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3d50fa</color>
+    <color name="colorPrimary">#0070ff</color>
     <color name="colorPrimarySecond">@color/colorPrimary</color>
-    <color name="colorSearch">#303135</color> <!--#3444D1 @color/itemBackground-->
+    <color name="colorSearch">#2a2a2a</color> <!--#3444D1 @color/itemBackground-->
     <color name="colorOngoing">#F53B66</color> <!--FF8181-->
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#3b65f5</color> <!-- 818fff-->
+    <color name="colorPrimaryDark">#0058cc</color>
+    <color name="colorAccent">#0070ff</color> <!-- 818fff-->
 
-    <color name="primaryGrayBackground">#2B2C30</color> <!--0f0f10 0E0E10 303135 2B2C30-->
-    <color name="primaryBlackBackground">#111111</color> <!--1C1C20 191a1f 19181E 202125 1C1C20-->
-    <color name="iconGrayBackground">#1C1C20</color> <!--141419 202125-->
-    <color name="boxItemBackground">#161616</color> <!-- 17171B 1B1B20-->
+    <color name="primaryGrayBackground">#2a2a2a</color> <!--0f0f10 0E0E10 303135 2B2C30-->
+    <color name="primaryBlackBackground">#1f1f1f</color> <!--1C1C20 191a1f 19181E 202125 1C1C20-->
+    <color name="iconGrayBackground">#333333</color> <!--141419 202125-->
+    <color name="boxItemBackground">#2a2a2a</color> <!-- 17171B 1B1B20-->
 
-    <color name="textColor">#e9eaee</color> <!--FFF-->
-    <color name="grayTextColor">#9ba0a4</color> <!-- 5e5f62-->
+    <color name="textColor">#ffffff</color> <!--FFF-->
+    <color name="grayTextColor">#999999</color> <!-- 5e5f62-->
     <color name="grayShimmer">#DCDCDC</color> <!-- 5e5f62-->
 
     <color name="searchColorTransparent">#1AFFFFFF</color> <!--DADADA-->
     <color name="transparent">#00000000</color>
 
     <color name="white">#FFF</color>
-    <color name="black">#000</color>
+    <color name="black">#1f1f1f</color>
     <color name="gray_200">#EEEEEE</color>
     <color name="gray_400">#BDBDBD</color>
 
     <color name="whiteText">#FFF</color>
-    <color name="blackText">#000</color>
+    <color name="blackText">#1f1f1f</color>
 
     <color name="progressBackgroundColor">#1AFFFFFF</color>
 
     <color name="dubColorText">#121950</color> <!--3b65f5 f18c82 8294F1-->
-    <color name="amoledModeLight">#121213</color>
+    <color name="amoledModeLight">#1f1f1f</color>
 
-    <color name="dubColorBg">#3B65F5</color>
+    <color name="dubColorBg">#0070ff</color>
     <color name="subColorText">#571711</color> <!--F53B66 FA3D79-->
     <color name="subColorBg">#F53B66</color>
     <color name="typeColorText">#BEC8FF</color>
@@ -48,10 +48,10 @@
     <color name="video_ripple">#80FFFFFF</color>
     <color name="video_button_ripple">#32FFFFFF</color>
 
-    <color name="black_overlay">#66000000</color>
-    <color name="darkBarTransparent">#C0121212</color>
-    <color name="skipOpTransparent">#4D121212</color>
-    <color name="darkBar">#121212</color>
+    <color name="black_overlay">#661f1f1f</color>
+    <color name="darkBarTransparent">#C01f1f1f</color>
+    <color name="skipOpTransparent">#4D1f1f1f</color>
+    <color name="darkBar">#1f1f1f</color>
     <color name="videoProgress">#66B5B5B5</color> <!--66B5B5B5-->
     <!--<color name="videoCache">#663D50FA</color>--> <!--66B5B5B5-->
 
@@ -121,5 +121,5 @@
     <color name="colorTestPass">#48E484</color>
     <color name="colorTestFail">#ea596e</color>
     <color name="colorTestWarning">#FF9800</color>
-    <color name="playIconBackground">#B3000000</color>
+    <color name="playIconBackground">#B31f1f1f</color>
 </resources>
