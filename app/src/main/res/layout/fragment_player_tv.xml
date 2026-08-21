@@ -55,11 +55,25 @@
             app:icon="@drawable/ic_baseline_skip_next_24"
             tools:visibility="visible" />
 
-        <ProgressBar
+        <com.facebook.shimmer.ShimmerFrameLayout
             android:id="@+id/main_load"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_gravity="center" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:shimmer_auto_start="true"
+            app:shimmer_duration="1500"
+            app:shimmer_base_alpha="0.3"
+            app:shimmer_highlight_alpha="1.0">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AiTV+"
+                android:textColor="@android:color/white"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
         <FrameLayout
             android:id="@+id/video_go_back_holder_holder"
