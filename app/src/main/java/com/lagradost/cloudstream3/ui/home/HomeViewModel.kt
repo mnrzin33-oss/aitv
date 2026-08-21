@@ -536,7 +536,15 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun afterPluginsLoaded(forceReload: Boolean) {
-        // Default to showing all providers - no single provider auto-selected
+        // Default to SuperCine if no provider selected yet
+        val current = DataStoreHelper.currentHomePage
+        if (current == null || current == noneApi.name) {
+            val validAPIs = context?.filterProviderByPreferredMedia()
+            val superCine = validAPIs?.firstOrNull { it.name == "SuperCine" }
+            if (superCine != null) {
+                DataStoreHelper.currentHomePage = superCine.name
+            }
+        }
         loadAndCancel(DataStoreHelper.currentHomePage, forceReload)
     }
 
