@@ -650,6 +650,87 @@ object PluginManager {
         Log.d(TAG, "Finished loading bundled plugins")
     }
 
+    /**
+     * On first boot, installs all plugins from the TLN+ repository.
+     * Uses a SharedPreferences flag to ensure it only runs once.
+     *
+     * DO NOT USE THIS IN A PLUGIN! It may case an infinite recursive loop lagging or crashing everyone's devices.
+     * If you use it from a plugin, do not expect a stable jvmName, SO DO NOT USE IT!
+     */
+    @Suppress("FunctionName")
+    @InternalAPI
+    @Throws
+    suspend fun ___DO_NOT_CALL_FROM_A_PLUGIN_installTlnPluginsOnFirstBoot(activity: Activity) {
+        assertNonRecursiveCallstack()
+
+        val prefs = activity.getSharedPreferences("tln_auto_install_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("tln_plugins_installed", false)) {
+            Log.i(TAG, "TLN+ plugins already installed, skipping")
+            return
+        }
+
+        Log.i(TAG, "Installing TLN+ plugins on first boot")
+
+        val tlnRepo = RepositoryData(
+            "TLN+",
+            "https://plugins.tln-stream.xyz/repo.json"
+        )
+
+        // Add TLN+ repo to prebuilt repositories so it participates in future update flows
+        val currentPrebuilt = getKey<Array<RepositoryData>>("PREBUILT_REPOSITORIES") ?: emptyArray()
+        val updatedPrebuilt = (currentPrebuilt + tlnRepo).distinctBy { it.url }
+        setKey("PREBUILT_REPOSITORIES", updatedPrebuilt)
+
+        // Fetch all plugins from the TLN+ repo
+        val plugins = getRepoPlugins(tlnRepo) ?: run {
+            Log.e(TAG, "Failed to fetch TLN+ repository plugins")
+            return
+        }
+
+        Log.i(TAG, "TLN+ repo has ${plugins.size} plugins available")
+
+        val installedPlugins = mutableListOf<String>()
+
+        plugins.amap { pluginWrapper ->
+            val sitePlugin = pluginWrapper.plugin
+
+            if (sitePlugin.url.isBlank()) return@amap
+
+            // Skip if already installed
+            if (getPluginPath(activity, sitePlugin.internalName, tlnRepo.url).exists()) {
+                Log.i(TAG, "TLN+ plugin already installed: ${sitePlugin.internalName}")
+                return@amap
+            }
+
+            downloadPlugin(
+                activity,
+                sitePlugin.url,
+                sitePlugin.fileHash,
+                sitePlugin.internalName,
+                tlnRepo.url,
+                sitePlugin.status != PROVIDER_STATUS_DOWN
+            ).let { success ->
+                if (success) {
+                    installedPlugins.add(sitePlugin.name)
+                    Log.i(TAG, "Installed TLN+ plugin: ${sitePlugin.name}")
+                } else {
+                    Log.w(TAG, "Failed to install TLN+ plugin: ${sitePlugin.name}")
+                }
+            }
+        }
+
+        main {
+            if (installedPlugins.isNotEmpty()) {
+                val uitext = txt(R.string.plugins_downloaded, installedPlugins.size)
+                createNotification(activity, uitext, installedPlugins)
+            }
+        }
+
+        prefs.edit().putBoolean("tln_plugins_installed", true).apply()
+        afterPluginsLoadedEvent.invoke(false)
+        Log.i(TAG, "TLN+ first-boot installation done, installed ${installedPlugins.size} plugins")
+    }
+
     /** @return true if safe mode is enabled in any possible way. */
     fun isSafeMode(): Boolean {
         return checkSafeModeFile() || lastError != null

@@ -436,6 +436,13 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun afterPluginsLoaded(forceReload: Boolean) {
+        // If no homepage is selected and plugins are loaded, pick the first available provider
+        if (DataStoreHelper.currentHomePage == null && PluginManager.loadedOnlinePlugins) {
+            val validAPIs = context?.filterProviderByPreferredMedia()
+            if (!validAPIs.isNullOrEmpty()) {
+                DataStoreHelper.currentHomePage = validAPIs.first().name
+            }
+        }
         loadAndCancel(DataStoreHelper.currentHomePage, forceReload)
     }
 
