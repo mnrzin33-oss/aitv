@@ -693,16 +693,16 @@ class HomeParentItemAdapterPreview(
         fun onViewAttachedToWindow() {
             previewViewpager?.registerOnPageChangeCallback(previewCallback)
 
-            observe(viewModel.preview) {
+            itemView.observe(viewModel.preview) {
                 updatePreview(it)
             }
-            observe(viewModel.resumeWatching) {
+            itemView.observe(viewModel.resumeWatching) {
                 updateResume(it)
             }
-            observe(viewModel.bookmarks) {
+            itemView.observe(viewModel.bookmarks) {
                 updateBookmarks(it)
             }
-            observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
+            itemView.observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
                 for ((chip, watch) in toggleList) {
                     chip.apply {
                         isVisible = visible.contains(watch)
