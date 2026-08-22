@@ -1662,7 +1662,7 @@ class GeneratorPlayer : FullScreenPlayer() {
         }
 
         val preferredSource = nextEpisodeSelection?.source
-        val preferredLink = findEpisodeSource(links, preferredSource)
+        val preferredLink = findEpisodeSource(links.map { it.link }, preferredSource)
         if (preferredSource != null &&
             preferredLink == null &&
             viewModel.state.loading is Resource.Loading
@@ -1672,7 +1672,7 @@ class GeneratorPlayer : FullScreenPlayer() {
         }
 
         nextEpisodeSelection = nextEpisodeSelection?.copy(source = null)
-        loadLink(preferredLink ?: links.first(), false)
+        loadLink(preferredLink ?: links.first().link, false)
         showPlayerMetadata()
     }
 
