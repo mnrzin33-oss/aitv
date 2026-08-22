@@ -60,3 +60,21 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup old tags (keep max 3)
+        run: |
+          TAGS=$(git ls-remote --tags origin 2>/dev/null | awk '{print $2}' | sed 's|refs/tags/||' | sort -V)
+          TAG_COUNT=$(echo "$TAGS" | wc -l)
+          echo "Total tags: $TAG_COUNT"
+          if [ "$TAG_COUNT" -gt 3 ]; then
+            DELETE_COUNT=$((TAG_COUNT - 3))
+            echo "Deleting $DELETE_COUNT oldest tags..."
+            echo "$TAGS" | head -n "$DELETE_COUNT" | while read TAG; do
+              echo "Deleting tag: $TAG"
+              git push origin --delete "$TAG" || true
+            done
+          else
+            echo "No cleanup needed ($TAG_COUNT tags <= 3)"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
