@@ -42,14 +42,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install SDK platform 36
+      - name: Install SDK platform 37
         run: sdkmanager "platforms;android-37"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Clean Gradle cache
+        run: ./gradlew clean --no-configuration-cache
+
       - name: Build for CodeQL
-        run: ./gradlew assembleStableDebug
+        run: ./gradlew assembleStableDebug --no-configuration-cache
         continue-on-error: true
 
       - name: Perform CodeQL Analysis
