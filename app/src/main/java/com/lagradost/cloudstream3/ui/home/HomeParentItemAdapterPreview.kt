@@ -307,10 +307,10 @@ class HomeParentItemAdapterPreview(
             */
         }
 
-        private val previewViewpager: ViewPager2 =
+        private val previewViewpager: ViewPager2? =
             itemView.findViewById(R.id.home_preview_viewpager)
 
-        private val previewViewpagerText: ViewGroup =
+        private val previewViewpagerText: ViewGroup? =
             itemView.findViewById(R.id.home_preview_viewpager_text)
 
         // private val previewHeader: FrameLayout = itemView.findViewById(R.id.home_preview)
@@ -408,71 +408,7 @@ class HomeParentItemAdapterPreview(
                 }
             }
             (binding as? FragmentHomeHeadBinding)?.apply {
-                //homePreviewImage.setImage(item.posterUrl, item.posterHeaders)
-
-                homePreviewPlay.setOnClickListener { view ->
-                    viewModel.click(
-                        LoadClickCallback(
-                            START_ACTION_RESUME_LATEST,
-                            view,
-                            position,
-                            item
-                        )
-                    )
-                }
-
-                homePreviewInfo.setOnClickListener { view ->
-                    viewModel.click(
-                        LoadClickCallback(0, view, position, item)
-                    )
-                }
-
-                // very ugly code, but I don't care
-                val id = item.getId()
-                val watchType =
-                    DataStoreHelper.getResultWatchState(id)
-                homePreviewBookmark.setText(watchType.stringRes)
-                homePreviewBookmark.setCompoundDrawablesWithIntrinsicBounds(
-                    null,
-                    ContextCompat.getDrawable(
-                        homePreviewBookmark.context,
-                        watchType.iconRes
-                    ),
-                    null,
-                    null
-                )
-
-                homePreviewBookmark.setOnClickListener { fab ->
-                    fab.context.getActivity()?.showBottomDialog(
-                        WatchType.entries
-                            .map { fab.context.getString(it.stringRes) }
-                            .toList(),
-                        DataStoreHelper.getResultWatchState(id).ordinal,
-                        fab.context.getString(R.string.action_add_to_bookmarks),
-                        showApply = false,
-                        {}) {
-                        val newValue = WatchType.entries[it]
-
-                        ResultViewModel2().updateWatchStatus(
-                            newValue,
-                            fab.context,
-                            item
-                        ) { statusChanged: Boolean ->
-                            if (!statusChanged) return@updateWatchStatus
-
-                            homePreviewBookmark.setCompoundDrawablesWithIntrinsicBounds(
-                                null,
-                                ContextCompat.getDrawable(
-                                    homePreviewBookmark.context,
-                                    newValue.iconRes
-                                ),
-                                null,
-                                null
-                            )
-                            homePreviewBookmark.setText(newValue.stringRes)
-                        }
-                    }
-                }
+                // Hero banner is now static - no interactive preview buttons
             }
         }
 
@@ -491,7 +427,7 @@ class HomeParentItemAdapterPreview(
             }
 
         fun onViewDetachedFromWindow() {
-            previewViewpager.unregisterOnPageChangeCallback(previewCallback)
+            previewViewpager?.unregisterOnPageChangeCallback(previewCallback)
         }
 
         private val toggleList = listOf<Pair<Chip, WatchType>>(
@@ -507,9 +443,9 @@ class HomeParentItemAdapterPreview(
         fun bind() = Unit
 
         init {
-            previewViewpager.setPageTransformer(HomeScrollTransformer())
+            previewViewpager?.setPageTransformer(HomeScrollTransformer())
 
-            previewViewpager.adapter = previewAdapter
+            previewViewpager?.adapter = previewAdapter
             resumeRecyclerView.adapter = resumeAdapter
             bookmarkRecyclerView.setRecycledViewPool(HomeChildItemAdapter.sharedPool)
             bookmarkRecyclerView.adapter = bookmarkAdapter
@@ -617,21 +553,21 @@ class HomeParentItemAdapterPreview(
 
                 homePreviewHiddenNextFocus.setOnFocusChangeListener { _, hasFocus ->
                     if (!hasFocus) return@setOnFocusChangeListener
-                    previewViewpager.setCurrentItem(previewViewpager.currentItem + 1, true)
+                    val vp = previewViewpager ?: return@setOnFocusChangeListener
+                    vp.setCurrentItem(vp.currentItem + 1, true)
                     homePreviewInfoBtt.requestFocus()
                 }
 
                 homePreviewHiddenPrevFocus.setOnFocusChangeListener { _, hasFocus ->
                     if (!hasFocus) return@setOnFocusChangeListener
-                    if (previewViewpager.currentItem <= 0) {
-                        //Focus the Home item as the default focus will be the header item
+                    val vp = previewViewpager ?: return@setOnFocusChangeListener
+                    if (vp.currentItem <= 0) {
                         (activity as? MainActivity)?.binding?.navRailView?.findViewById<NavigationBarItemView>(
                             R.id.navigation_home
                         )?.requestFocus()
                     } else {
-                        previewViewpager.setCurrentItem(previewViewpager.currentItem - 1, true)
+                        vp.setCurrentItem(vp.currentItem - 1, true)
                         binding.homePreviewInfoBtt.requestFocus()
-                        //binding.homePreviewPlayBtt.requestFocus()
                     }
                 }
             }
@@ -664,29 +600,14 @@ class HomeParentItemAdapterPreview(
                 is Resource.Success -> {
                     previewAdapter.submitList(preview.value.second)
                     previewAdapter.hasMoreItems = preview.value.first
-                    /*if (!.setItems(
-                            preview.value.second,
-                            preview.value.first
-                        )
-                    ) {
-                        // this might seam weird and useless, however this prevents a very weird andrid bug were the viewpager is not rendered properly
-                        // I have no idea why that happens, but this is my ducktape solution
-                        previewViewpager.setCurrentItem(0, false)
-                        previewViewpager.beginFakeDrag()
-                        previewViewpager.fakeDragBy(1f)
-                        previewViewpager.endFakeDrag()
-                        previewCallback.onPageSelected(0)
-                        //previewHeader.isVisible = true
-                    }*/
 
-                    previewViewpager.isVisible = true
-                    previewViewpagerText.isVisible = true
+                    previewViewpager?.isVisible = true
+                    previewViewpagerText?.isVisible = true
                     alternativeAccountPadding?.isVisible = false
                     (binding as? FragmentHomeHeadTvBinding)?.apply {
                         homePreviewInfoBtt.isVisible = true
                     }
-                    // Explicitly bind the current item to ensure instant loading
-                    val currentPos = previewViewpager.currentItem
+                    val currentPos = previewViewpager?.currentItem ?: 0
                     val item = preview.value.second.getOrNull(currentPos)
                     if (item != null) {
                         onSelect(item, currentPos)
@@ -695,14 +616,13 @@ class HomeParentItemAdapterPreview(
 
                 else -> {
                     previewAdapter.submitList(listOf())
-                    previewViewpager.setCurrentItem(0, false)
-                    previewViewpager.isVisible = false
-                    previewViewpagerText.isVisible = false
+                    previewViewpager?.setCurrentItem(0, false)
+                    previewViewpager?.isVisible = false
+                    previewViewpagerText?.isVisible = false
                     alternativeAccountPadding?.isVisible = true
                     (binding as? FragmentHomeHeadTvBinding)?.apply {
                         homePreviewInfoBtt.isVisible = false
                     }
-                    //previewHeader.isVisible = false
                 }
             }
         }
@@ -771,33 +691,25 @@ class HomeParentItemAdapterPreview(
         }
 
         fun onViewAttachedToWindow() {
-            previewViewpager.registerOnPageChangeCallback(previewCallback)
+            previewViewpager?.registerOnPageChangeCallback(previewCallback)
 
-            previewViewpager.apply {
-                observe(viewModel.preview) {
-                    updatePreview(it)
-                }
-                /*if (binding is FragmentHomeHeadTvBinding) {
-                    observe(viewModel.apiName) { name ->
-                        binding.homePreviewChangeApi.text = name
-                        binding.homePreviewReloadProvider.isGone = (name == noneApi.name)
+            observe(viewModel.preview) {
+                updatePreview(it)
+            }
+            observe(viewModel.resumeWatching) {
+                updateResume(it)
+            }
+            observe(viewModel.bookmarks) {
+                updateBookmarks(it)
+            }
+            observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
+                for ((chip, watch) in toggleList) {
+                    chip.apply {
+                        isVisible = visible.contains(watch)
+                        isChecked = checked.contains(watch)
                     }
-                }*/
-                observe(viewModel.resumeWatching) {
-                    updateResume(it)
                 }
-                observe(viewModel.bookmarks) {
-                    updateBookmarks(it)
-                }
-                observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
-                    for ((chip, watch) in toggleList) {
-                        chip.apply {
-                            isVisible = visible.contains(watch)
-                            isChecked = checked.contains(watch)
-                        }
-                    }
-                    toggleListHolder?.isGone = visible.isEmpty()
-                }
+                toggleListHolder?.isGone = visible.isEmpty()
             }
         }
     }
