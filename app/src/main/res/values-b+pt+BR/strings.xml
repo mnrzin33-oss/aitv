@@ -24,7 +24,7 @@
     <string name="filler" formatted="true">Preenchimento</string>
     <string name="duration_format" formatted="true">%d min</string>
     <string name="hero_subtitle">Mais de 20 streamings em um so lugar</string>
-    <string name="hero_description">Filmes, series, anime e muito mais.</string>
+    <string name="hero_description">Disponivel em Celular, Tablet, Computador (ChromeOS e Emuladores Android) e TVs (Android TV e entre outros com suporte a APK/Gerenciador de Arquivos).</string>
     <string name="all_providers">Todos</string>
     <string name="app_name">AiTV+</string>
     <string name="title_home">Início</string>
