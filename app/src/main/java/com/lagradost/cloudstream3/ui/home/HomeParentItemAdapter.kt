@@ -10,6 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.R
+import com.lagradost.cloudstream3.databinding.HomeHighlightCardBinding
+import com.lagradost.cloudstream3.databinding.HomeHighlightCardTvBinding
 import com.lagradost.cloudstream3.databinding.HomepageParentBinding
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.ui.BaseAdapter
@@ -18,6 +20,7 @@ import com.lagradost.cloudstream3.ui.ViewHolderState
 import com.lagradost.cloudstream3.ui.newSharedPool
 import com.lagradost.cloudstream3.ui.result.FOCUS_SELF
 import com.lagradost.cloudstream3.ui.result.setLinearListLayout
+import com.lagradost.cloudstream3.ui.search.SEARCH_ACTION_LOAD
 import com.lagradost.cloudstream3.ui.search.SearchClickCallback
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
 import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
@@ -25,6 +28,9 @@ import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
 import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.AppContextUtils.isRecyclerScrollable
+import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
+
+const val HIGHLIGHT_ITEM_NAME = "__highlight__"
 
 class LoadClickCallback(
     val action: Int = 0,
@@ -32,6 +38,11 @@ class LoadClickCallback(
     val position: Int,
     val response: LoadResponse
 )
+
+class HighlightViewHolder(val binding: ViewBinding) : ViewHolderState<Bundle>(binding) {
+    override fun save(): Bundle = Bundle()
+    override fun restore(state: Bundle) {}
+}
 
 open class ParentItemAdapter(
     id: Int,
@@ -68,10 +79,28 @@ open class ParentItemAdapter(
         }
     }
 
+    override fun customContentViewType(item: HomeViewModel.ExpandableHomepageList): Int {
+        return if (item.list.name == HIGHLIGHT_ITEM_NAME) 1 else 0
+    }
+
+    override fun onCreateCustomContent(parent: ViewGroup, viewType: Int): ViewHolderState<Bundle> {
+        if (viewType == 1) {
+            val inflater = LayoutInflater.from(parent.context)
+            val binding = if (isLayout(TV or EMULATOR)) {
+                HomeHighlightCardTvBinding.inflate(inflater, parent, false)
+            } else {
+                HomeHighlightCardBinding.inflate(inflater, parent, false)
+            }
+            return HighlightViewHolder(binding)
+        }
+        return onCreateContent(parent)
+    }
+
     override fun submitList(
         list: Collection<HomeViewModel.ExpandableHomepageList>?,
         commitCallback: Runnable?
     ) {
+        // Stable sort: empty categories go to the end, preserving original order within groups
         super.submitList(list?.sortedBy { it.list.list.isEmpty() }, commitCallback)
     }
 
@@ -80,6 +109,8 @@ open class ParentItemAdapter(
         item: HomeViewModel.ExpandableHomepageList,
         position: Int
     ) {
+        // Skip update for highlight cards
+        if (item.list.name == HIGHLIGHT_ITEM_NAME) return
         val binding = holder.view
         if (binding !is HomepageParentBinding) return
         (binding.homeChildRecyclerview.adapter as? HomeChildItemAdapter)?.submitList(item.list.list)
@@ -90,9 +121,105 @@ open class ParentItemAdapter(
         item: HomeViewModel.ExpandableHomepageList,
         position: Int
     ) {
+        val binding = holder.view
+
+        // Handle highlight card
+        if (item.list.name == HIGHLIGHT_ITEM_NAME && binding is HomeHighlightCardBinding) {
+            val searchItem = item.list.list.firstOrNull() ?: return
+            binding.apply {
+                highlightTitle.text = searchItem.name
+                highlightImage.loadImage(
+                    searchItem.posterUrl,
+                    headers = searchItem.posterHeaders
+                )
+                val typeText = searchItem.type?.let { type ->
+                    when (type) {
+                        com.lagradost.cloudstream3.TvType.Movie -> "Filme"
+                        com.lagradost.cloudstream3.TvType.TvSeries -> "Serie"
+                        com.lagradost.cloudstream3.TvType.Anime -> "Anime"
+                        else -> type.name
+                    }
+                } ?: ""
+                val scoreText = searchItem.score?.toStringNull(0.1, 10, 1, false)
+                val parts = mutableListOf<String>()
+                if (typeText.isNotEmpty()) parts.add(typeText)
+                if (scoreText != null) parts.add("Nota: $scoreText")
+                highlightSubtitle.text = parts.joinToString(" - ")
+                highlightDescription.text = ""
+                highlightPlayButton.setOnClickListener {
+                    clickCallback(
+                        SearchClickCallback(
+                            SEARCH_ACTION_LOAD,
+                            it,
+                            -1,
+                            searchItem
+                        )
+                    )
+                }
+                highlightCard.setOnClickListener {
+                    clickCallback(
+                        SearchClickCallback(
+                            SEARCH_ACTION_LOAD,
+                            it,
+                            -1,
+                            searchItem
+                        )
+                    )
+                }
+            }
+            return
+        }
+
+        // Handle highlight card (TV variant)
+        if (item.list.name == HIGHLIGHT_ITEM_NAME && binding is HomeHighlightCardTvBinding) {
+            val searchItem = item.list.list.firstOrNull() ?: return
+            binding.apply {
+                highlightTitle.text = searchItem.name
+                highlightImage.loadImage(
+                    searchItem.posterUrl,
+                    headers = searchItem.posterHeaders
+                )
+                val typeText = searchItem.type?.let { type ->
+                    when (type) {
+                        com.lagradost.cloudstream3.TvType.Movie -> "Filme"
+                        com.lagradost.cloudstream3.TvType.TvSeries -> "Serie"
+                        com.lagradost.cloudstream3.TvType.Anime -> "Anime"
+                        else -> type.name
+                    }
+                } ?: ""
+                val scoreText = searchItem.score?.toStringNull(0.1, 10, 1, false)
+                val parts = mutableListOf<String>()
+                if (typeText.isNotEmpty()) parts.add(typeText)
+                if (scoreText != null) parts.add("Nota: $scoreText")
+                highlightSubtitle.text = parts.joinToString(" - ")
+                highlightDescription.text = ""
+                highlightPlayButton.setOnClickListener {
+                    clickCallback(
+                        SearchClickCallback(
+                            SEARCH_ACTION_LOAD,
+                            it,
+                            -1,
+                            searchItem
+                        )
+                    )
+                }
+                highlightCard.setOnClickListener {
+                    clickCallback(
+                        SearchClickCallback(
+                            SEARCH_ACTION_LOAD,
+                            it,
+                            -1,
+                            searchItem
+                        )
+                    )
+                }
+            }
+            return
+        }
+
+        // Handle regular category rows
         val startFocus = R.id.nav_rail_view
         val endFocus = FOCUS_SELF
-        val binding = holder.view
         if (binding !is HomepageParentBinding) return
         val info = item.list
         binding.apply {

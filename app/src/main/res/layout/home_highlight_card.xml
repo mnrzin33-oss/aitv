@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/highlight_card"
+    android:layout_width="match_parent"
+    android:layout_height="220dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
+    android:elevation="10dp"
+    android:foreground="@drawable/outline_drawable"
+    app:cardBackgroundColor="?attr/primaryGrayBackground"
+    app:cardCornerRadius="@dimen/rounded_image_radius">
+
+    <ImageView
+        android:id="@+id/highlight_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/search_poster_img_des"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/title_shadow" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/highlight_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/geist_bold"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="The Perfect Run" />
+
+        <TextView
+            android:id="@+id/highlight_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#CCFFFFFF"
+            android:textSize="13sp"
+            tools:text="2024 - 1h 30m - Filme" />
+
+        <TextView
+            android:id="@+id/highlight_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="#99FFFFFF"
+            android:textSize="12sp"
+            tools:text="Uma aventura epica que vai mudar tudo..." />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/highlight_play_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:src="@drawable/play_button" />
+
+</androidx.cardview.widget.CardView>

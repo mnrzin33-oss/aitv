@@ -504,6 +504,85 @@ class HomeViewModel : ViewModel() {
                 _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
             }
 
+            // Inject highlight card between categories
+            if (expandable.isNotEmpty() && allItems.isNotEmpty()) {
+                val allResults = allItems.flatMap { it.list }.distinctBy { it.url }
+                if (allResults.isNotEmpty()) {
+                    val highlightItem = allResults.random()
+                    val highlightList = HomePageList(
+                        name = HIGHLIGHT_ITEM_NAME,
+                        list = listOf(highlightItem),
+                        isHorizontalImages = false
+                    )
+                    // Insert highlight after the 2nd category
+                    val keys = expandable.keys.toMutableList()
+                    if (keys.size >= 2) {
+                        val newExpandable = LinkedHashMap<String, ExpandableHomepageList>()
+                        var inserted = false
+                        for ((index, key) in keys.withIndex()) {
+                            expandable[key]?.let { newExpandable[key] = it }
+                            if (index == 1 && !inserted) {
+                                newExpandable[HIGHLIGHT_ITEM_NAME] = ExpandableHomepageList(
+                                    list = highlightList,
+                                    currentPage = 1,
+                                    hasNext = false
+                                )
+                                inserted = true
+                            }
+                        }
+                        if (!inserted) {
+                            newExpandable[HIGHLIGHT_ITEM_NAME] = ExpandableHomepageList(
+                                list = highlightList,
+                                currentPage = 1,
+                                hasNext = false
+                            )
+                        }
+                        expandable.clear()
+                        expandable.putAll(newExpandable)
+                    }
+                }
+            }
+
+            // Filter categories to show only target ones
+            if (expandable.isNotEmpty()) {
+                val targetPatterns = mapOf(
+                    "Lancamentos" to listOf("lan", "novo", "novidade", "recente", "latest", "new", "novo"),
+                    "Filmes" to listOf("filme", "movie", "movies", "cinema", "film"),
+                    "Series" to listOf("serie", "series", "tv", "show", "tvshows"),
+                    "Animes" to listOf("anime", "animes", "animation"),
+                    "Documentarios" to listOf("documentario", "documentarios", "documentary", "documentaries", "docs")
+                )
+
+                val filteredExpandable = mutableMapOf<String, ExpandableHomepageList>()
+                
+                // Always keep the highlight
+                expandable[HIGHLIGHT_ITEM_NAME]?.let {
+                    filteredExpandable[HIGHLIGHT_ITEM_NAME] = it
+                }
+
+                // Match categories by patterns
+                for ((key, value) in expandable) {
+                    if (key == HIGHLIGHT_ITEM_NAME) continue
+                    val lowerKey = key.lowercase()
+                    val matches = targetPatterns.values.flatten().any { pattern ->
+                        lowerKey.contains(pattern)
+                    }
+                    if (matches) {
+                        // Find the matching target name
+                        val targetName = targetPatterns.entries.firstOrNull { (_, patterns) ->
+                            patterns.any { pattern -> lowerKey.contains(pattern) }
+                        }?.key ?: key
+                        // Keep original name if it matches, otherwise use target name
+                        filteredExpandable[key] = value
+                    }
+                }
+
+                if (filteredExpandable.size > 1) { // more than just highlight
+                    expandable.clear()
+                    expandable.putAll(filteredExpandable)
+                }
+            }
+
             // Save to cache for next launch
             if (expandable.isNotEmpty()) {
                 saveHomeCache(expandable)
