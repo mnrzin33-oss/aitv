@@ -27,20 +27,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install SDK platform 37
-        run: sdkmanager "platforms;android-37"
+      - name: Install SDK platform 36
+        run: sdkmanager "platforms;android-36"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Clean Gradle cache
-        run: ./gradlew clean --no-configuration-cache
-
       - name: Build debug APK
-        run: ./gradlew assembleStableDebug --no-configuration-cache
+        run: ./gradlew assembleStableDebug
 
       - name: Run lint
-        run: ./gradlew lintStableDebug --no-configuration-cache
+        run: ./gradlew lintStableDebug
         continue-on-error: true
 
       - name: Upload lint results
