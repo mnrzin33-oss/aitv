@@ -281,7 +281,7 @@ object VideoDownloadManager {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
                 val pendingIntent =
-                    PendingIntentCompat.getActivity(context, 0, intent, 0, false)
+                    PendingIntentCompat.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE, false)
                 builder.setContentIntent(pendingIntent)
             }
 
