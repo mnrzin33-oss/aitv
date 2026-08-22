@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  ktlint:
-    name: Kotlin Lint
+  build-check:
+    name: Build Verification
     runs-on: ubuntu-latest
 
     steps:
@@ -33,12 +33,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run ktlint
-        run: ./gradlew ktlintCheck
-        continue-on-error: true
+      - name: Build debug APK
+        run: ./gradlew assembleStableDebug
 
-      - name: Run detekt
-        run: ./gradlew detekt
+      - name: Run lint
+        run: ./gradlew lintStableDebug
         continue-on-error: true
 
       - name: Upload lint results
@@ -46,7 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lint-results
-          path: |
-            app/build/reports/ktlint/
-            app/build/reports/detekt/
+          path: app/build/reports/lint-results*.html
           retention-days: 7

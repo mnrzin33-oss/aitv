@@ -693,23 +693,25 @@ class HomeParentItemAdapterPreview(
         fun onViewAttachedToWindow() {
             previewViewpager?.registerOnPageChangeCallback(previewCallback)
 
-            itemView.observe(viewModel.preview) {
-                updatePreview(it)
-            }
-            itemView.observe(viewModel.resumeWatching) {
-                updateResume(it)
-            }
-            itemView.observe(viewModel.bookmarks) {
-                updateBookmarks(it)
-            }
-            itemView.observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
-                for ((chip, watch) in toggleList) {
-                    chip.apply {
-                        isVisible = visible.contains(watch)
-                        isChecked = checked.contains(watch)
-                    }
+            previewViewpager?.apply {
+                observe(viewModel.preview) {
+                    updatePreview(it)
                 }
-                toggleListHolder?.isGone = visible.isEmpty()
+                observe(viewModel.resumeWatching) {
+                    updateResume(it)
+                }
+                observe(viewModel.bookmarks) {
+                    updateBookmarks(it)
+                }
+                observe(viewModel.availableWatchStatusTypes) { (checked, visible) ->
+                    for ((chip, watch) in toggleList) {
+                        chip.apply {
+                            isVisible = visible.contains(watch)
+                            isChecked = checked.contains(watch)
+                        }
+                    }
+                    toggleListHolder?.isGone = visible.isEmpty()
+                }
             }
         }
     }
