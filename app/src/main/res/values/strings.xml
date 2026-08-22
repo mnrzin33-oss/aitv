@@ -27,8 +27,8 @@
     <string name="new_update_format" formatted="true">New update found!\n%1$s -&gt; %2$s</string>
     <string name="filler" formatted="true">Filler</string>
     <string name="duration_format" formatted="true">%d min</string>
-    <string name="hero_subtitle">Mais de 20 streamings em um so lugar</string>
-    <string name="hero_description">Disponivel em Celular, Tablet, Computador (ChromeOS e Emuladores Android) e TVs (Android TV e entre outros com suporte a APK/Gerenciador de Arquivos).</string>
+    <string name="hero_subtitle">Seu entretenimento, simplificado.</string>
+    <string name="hero_description">Acesse o melhor do streaming em um unico lugar. Disponivel no seu Celular, Tablet, Computador e Smart TV.</string>
     <string name="all_providers">All</string>
     <string name="app_name">AiTV+</string>
     <string name="play_with_app_name">Play with AiTV+</string>
