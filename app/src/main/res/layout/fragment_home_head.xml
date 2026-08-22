@@ -18,13 +18,61 @@
         android:layout_width="match_parent"
         android:layout_height="500dp">
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/home_preview_viewpager"
+        <!-- Static AiTV+ Banner -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:layout_height="match_parent">
 
-        </androidx.viewpager2.widget.ViewPager2>
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/hero_banner" />
+
+            <!-- Gradient overlay at bottom for text readability -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/hero_gradient_overlay" />
+
+            <!-- Banner text content -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AiTV+"
+                    android:textColor="@android:color/white"
+                    android:textSize="36sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/geist_bold"
+                    android:letterSpacing="0.02" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/hero_subtitle"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/geist" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/hero_description"
+                    android:textColor="#99FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/geist" />
+            </LinearLayout>
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/home_padding"
@@ -33,7 +81,6 @@
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="0dp">
-
 
             <androidx.appcompat.widget.SearchView
                 android:id="@+id/home_search"
@@ -87,71 +134,14 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!--
-                        <TextView
-                            android:visibility="gone"
-                            android:id="@+id/test_search"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:layout_gravity="start"
-                            android:gravity="center"
-
-                            android:textSize="20dp"
-                            android:layout_margin="20dp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/search"
-                            android:textColor="@color/white"
-                            app:drawableLeftCompat="@drawable/search_icon"
-                            app:tint="@color/white" />
-        -->
-
         <LinearLayout
             android:id="@+id/home_preview_title_holder"
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:layout_gravity="bottom"
             android:gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/home_preview_bookmark"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginStart="25dp"
-                android:layout_marginEnd="25dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:gravity="center"
-                android:text="@string/none"
-                android:textColor="?attr/white"
-                app:drawableTint="?attr/white"
-                app:drawableTopCompat="@drawable/ic_baseline_add_24"
-                app:tint="?attr/white" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/home_preview_play"
-                style="@style/WhiteButton"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/home_play"
-                app:icon="@drawable/ic_baseline_play_arrow_24" />
-
-            <TextView
-                android:id="@+id/home_preview_info"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginStart="25dp"
-                android:layout_marginEnd="25dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:gravity="center"
-                android:text="@string/home_info"
-                android:textColor="?attr/white"
-                app:drawableTint="?attr/white"
-                app:drawableTopCompat="@drawable/ic_outline_info_24"
-                app:tint="?attr/white" />
-
-        </LinearLayout>
+            android:orientation="horizontal"
+            android:visibility="gone" />
 
     </FrameLayout>
 
