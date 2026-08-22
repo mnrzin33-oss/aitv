@@ -158,6 +158,29 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
             }
         }
 
+    private var exitConfirmDialog: AlertDialog? = null
+
+    private fun showExitConfirmDialog() {
+        val act = activity ?: return
+        exitConfirmDialog?.dismiss()
+        exitConfirmDialog = AlertDialog.Builder(act, R.style.AlertDialogCustom)
+            .setTitle(R.string.exit_player_confirm_title)
+            .setMessage(R.string.exit_player_confirm_message)
+            .setPositiveButton(R.string.yes) { _, _ ->
+                exitConfirmDialog = null
+                act.popCurrentPage("FullScreenPlayer")
+            }
+            .setNegativeButton(R.string.no) { dialog, _ ->
+                exitConfirmDialog = null
+                dialog.dismiss()
+            }
+            .setOnDismissListener {
+                exitConfirmDialog = null
+            }
+            .create()
+        exitConfirmDialog?.show()
+    }
+
     /** Checks if any top level dialog is open and showing */
     fun isDialogOpen() =
         selectSourceDialog?.isShowing == true
@@ -304,7 +327,6 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
 
             listOfNotNull(
                 playerVideoTitleHolder,
-                playerVideoTitleRez,
                 playerVideoInfo,
                 playerGoBackHolder,
                 playerVideoClock,
@@ -461,7 +483,7 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
                 // netflix capture back and hide ~monke
                 onClickChange()
             } else {
-                activity?.popCurrentPage("FullScreenPlayer")
+                showExitConfirmDialog()
             }
         }
         playerHostView?.requestUpdateBrightnessOverlayOnNextLayout()
@@ -739,7 +761,6 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
             // video_bar.startAnimation(fadeAnimation)
 
             // TITLE
-            playerVideoTitleRez.startAnimation(fadeAnimation)
             playerVideoInfo.startAnimation(fadeAnimation)
             playerEpisodeFiller.startAnimation(fadeAnimation)
             playerVideoTitleHolder.startAnimation(fadeAnimation)
@@ -774,7 +795,6 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
             playerEpisodesButtonRoot.isVisible = showPlayerEpisodes
             playerEpisodesButton.isVisible = showPlayerEpisodes
             playerVideoTitleHolder.isGone = togglePlayerTitleGone || playerVideoTitle.text.isBlank()
-            playerVideoTitleRez.isGone = isGone || playerVideoTitleRez.text.isBlank()
             playerEpisodeFiller.isGone = isGone
             playerCenterMenu.isGone = isGone
             playerLock.isGone = !isShowing
@@ -1256,7 +1276,7 @@ open class FullScreenPlayer : AbstractPlayerFragment<FragmentPlayerBinding>(
             }
 
             playerGoBack.setOnClickListener {
-                activity?.popCurrentPage("FullScreenPlayer")
+                showExitConfirmDialog()
             }
 
             playerSourcesBtt.setOnClickListener {

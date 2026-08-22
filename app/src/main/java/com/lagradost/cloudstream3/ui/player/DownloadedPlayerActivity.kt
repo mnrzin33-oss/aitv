@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.lagradost.cloudstream3.CommonActivity
 import com.lagradost.cloudstream3.R
@@ -16,6 +17,28 @@ import com.lagradost.cloudstream3.utils.UIHelper.enableEdgeToEdgeCompat
 class DownloadedPlayerActivity : AppCompatActivity() {
     companion object {
         const val TAG = "DownloadedPlayerActivity"
+    }
+
+    private var exitDialog: AlertDialog? = null
+
+    private fun showExitConfirmDialog() {
+        exitDialog?.dismiss()
+        exitDialog = AlertDialog.Builder(this, R.style.AlertDialogCustom)
+            .setTitle(R.string.exit_player_confirm_title)
+            .setMessage(R.string.exit_player_confirm_message)
+            .setPositiveButton(R.string.yes) { _, _ ->
+                exitDialog = null
+                moveTaskToBack(true)
+            }
+            .setNegativeButton(R.string.no) { dialog, _ ->
+                exitDialog = null
+                dialog.dismiss()
+            }
+            .setOnDismissListener {
+                exitDialog = null
+            }
+            .create()
+        exitDialog?.show()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean =
@@ -74,7 +97,7 @@ class DownloadedPlayerActivity : AppCompatActivity() {
          * recents entry always reflects the current state, ensuring we load the
          * correct file.
          */
-        attachBackPressedCallback("DownloadedPlayerActivity") { moveTaskToBack(true) }
+        attachBackPressedCallback("DownloadedPlayerActivity") { showExitConfirmDialog() }
     }
 
     private fun handleIntent(intent: Intent) {

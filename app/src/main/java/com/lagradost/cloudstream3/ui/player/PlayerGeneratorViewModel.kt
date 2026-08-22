@@ -15,6 +15,7 @@ import com.lagradost.cloudstream3.ui.player.source_priority.QualityDataHelper
 import com.lagradost.cloudstream3.ui.player.source_priority.QualityDataHelper.getLinkPriority
 import com.lagradost.cloudstream3.ui.result.ResultEpisode
 import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
+import com.lagradost.cloudstream3.AllLanguagesName
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.videoskip.SkipAPI
@@ -376,8 +377,9 @@ class PlayerGeneratorViewModel : ViewModel() {
             return true
         }
 
+        val subtitleIETF = subtitle.getIETF_tag() ?: return true
         return langFilterList.any { lang ->
-            subtitle.originalName.contains(lang, ignoreCase = true)
+            subtitleIETF.equals(lang, ignoreCase = true)
         }
     }
 

@@ -653,10 +653,6 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
     override fun onPause() {
         super.onPause()
 
-        // Start any delayed updates
-        if (ApkInstaller.delayedInstaller?.startInstallation() == true) {
-            Toast.makeText(this, R.string.update_started, Toast.LENGTH_LONG).show()
-        }
         try {
             if (isCastApiAvailable()) {
                 mSessionManager?.removeSessionManagerListener(mSessionManagerListener)
@@ -711,6 +707,10 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
     }
 
     override fun onDestroy() {
+        // Start any delayed updates
+        if (ApkInstaller.delayedInstaller?.startInstallation() == true) {
+            Toast.makeText(this, R.string.update_started, Toast.LENGTH_LONG).show()
+        }
         filesToDelete.forEach { path ->
             val result = File(path).deleteRecursively()
             if (result) {
@@ -746,7 +746,11 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         hierarchy.any { it.id == destId }
 
     private var lastNavTime = 0L
-    private fun onNavDestinationSelected(item: MenuItem, navController: NavController): Boolean {
+    private fun onNavDestinationSelected(
+        item: MenuItem,
+        navController: NavController,
+        navHostFragment: NavHostFragment,
+    ): Boolean {
         val currentTime = System.currentTimeMillis()
         // safeDebounce: Check if a previous tap happened within the last 400ms
         if (currentTime - lastNavTime < 400) return false
@@ -755,7 +759,13 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         val destinationId = item.itemId
 
         // Check if we are already at the selected destination
-        if (navController.currentDestination?.id == destinationId) return false
+        if (navController.currentDestination?.id == destinationId) {
+            if (destinationId == R.id.navigation_search) {
+                (navHostFragment.childFragmentManager.primaryNavigationFragment as? SearchFragment)
+                    ?.focusSearchInput()
+            }
+            return false
+        }
 
         // Make all nav buttons focus on this specific view when nextFocusRightId
         val targetView = when (destinationId) {
@@ -1682,6 +1692,23 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                     showConfirmExitDialog(settingsManager)
                 }
             } else detachBackPressedCallback("MainActivity")
+
+            // Re-point nav rail focus at the provider button on every arrival
+            if (isLayout(TV or EMULATOR)) {
+                val fromView = binding?.navRailView
+                if (fromView != null) {
+                    fromView.nextFocusRightId = R.id.home_change_api
+                    for (focusView in arrayOf(
+                        R.id.navigation_downloads,
+                        R.id.navigation_home,
+                        R.id.navigation_search,
+                        R.id.navigation_library,
+                        R.id.navigation_settings,
+                    )) {
+                        fromView.findViewById<View?>(focusView)?.nextFocusRightId = R.id.home_change_api
+                    }
+                }
+            }
         }
 
         //val navController = findNavController(R.id.nav_host_fragment)
@@ -1704,7 +1731,8 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             setOnItemSelectedListener { item ->
                 onNavDestinationSelected(
                     item,
-                    navController
+                    navController,
+                    navHostFragment
                 )
             }
 
@@ -1732,7 +1760,8 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             setOnItemSelectedListener { item ->
                 onNavDestinationSelected(
                     item,
-                    navController
+                    navController,
+                    navHostFragment
                 )
             }
 

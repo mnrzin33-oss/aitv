@@ -490,6 +490,7 @@
     <string name="subtitles_remove_captions">Remove closed captions from subtitles</string>
     <string name="subtitles_remove_bloat">Remove bloat from subtitles</string>
     <string name="subtitles_filter_lang">Filter by preferred media language</string>
+    <string name="subtitles_group_unknown">Unknown</string>
     <string name="extras">Extras</string>
     <string name="trailer">Trailer</string>
     <string name="network_adress_example">https://example.com/example.mp4</string>
@@ -576,6 +577,8 @@
     <string name="clipboard_unknown_error">Error copying, Please copy logcat and contact app support.</string>
     <string name="action_mark_as_watched">Mark as watched</string>
     <string name="action_remove_from_watched">Remove from watched</string>
+    <string name="exit_player_confirm_title">Exit Player?</string>
+    <string name="exit_player_confirm_message">Your buffered stream will be lost. Are you sure you want to exit?</string>
     <string name="confirm_exit_dialog">Are you sure you want to exit\?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
