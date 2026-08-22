@@ -75,6 +75,14 @@
                 tools:text="🇸🇪"
                 tools:visibility="visible" />
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/search_item_download_play"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:src="@drawable/play_button" />
+
         <androidx.core.widget.ContentLoadingProgressBar
             android:id="@+id/watchProgress"
             style="@android:style/Widget.Material.ProgressBar.Horizontal"
@@ -82,8 +90,8 @@
             android:layout_height="5dp"
             android:layout_gravity="bottom"
             android:layout_marginBottom="-1.5dp"
-            android:progressBackgroundTint="?attr/white"
-            android:progressTint="?attr/white"
+            android:progressBackgroundTint="?attr/colorPrimary"
+            android:progressTint="?attr/colorPrimary"
             android:visibility="gone"
             tools:progress="50"
             tools:visibility="visible" />
